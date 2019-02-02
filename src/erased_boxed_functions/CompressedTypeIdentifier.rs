@@ -26,7 +26,8 @@ impl Into<u8> for CompressedTypeIdentifier
 
 impl CompressedTypeIdentifier
 {
-	const Size: usize = size_of::<Self>();
+	/// Size in bytes.
+	pub const Size: usize = size_of::<Self>();
 
 	#[inline(always)]
 	fn index(self) -> usize
