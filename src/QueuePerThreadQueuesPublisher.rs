@@ -37,7 +37,7 @@ impl<MessageHandlerArguments: Debug + Copy, E: Debug> QueuePerThreadQueuesPublis
 	///
 	/// If there is no registered queue, publishes to the queue which is assumed to exist for the current thread.
 	#[inline(always)]
-	pub fn publish_message<MessageContents>(&self, logical_core_identifier: LogicalCoreIdentifier, compressed_type_identifier: CompressedTypeIdentifier, message_contents_constructor: impl FnOnce(NonNull<MessageContents>))
+	pub fn publish_message<MessageContents, F: FnOnce(NonNull<MessageContents>)>(&self, logical_core_identifier: LogicalCoreIdentifier, compressed_type_identifier: CompressedTypeIdentifier, message_contents_constructor: F)
 	{
 		let queue = self.queues.get_or_current(logical_core_identifier);
 		queue.enqueue(compressed_type_identifier, message_contents_constructor)
