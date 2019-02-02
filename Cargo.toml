@@ -17,7 +17,7 @@ readme = "README.md"
 publish = true
 version = "0.1.0"
 
-[dependencies]
+[target.'cfg(any(target_os = "android", target_os = "linux"))'.dependencies]
 arrayvec = "^0.4"
 cpu-affinity = "^0.4.3"
 libc = "^0.2.44"
