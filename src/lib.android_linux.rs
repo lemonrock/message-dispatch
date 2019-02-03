@@ -4,6 +4,7 @@
 
 extern crate arrayvec;
 extern crate cpu_affinity;
+extern crate hashbrown;
 extern crate libc;
 extern crate magic_ring_buffer;
 extern crate terminate;
@@ -12,9 +13,9 @@ extern crate terminate;
 use self::erased_boxed_functions::*;
 use self::virtual_method_tables::*;
 use ::arrayvec::ArrayVec;
+use ::hashbrown::HashMap;
 use ::cpu_affinity::*;
 use ::magic_ring_buffer::*;
-use ::std::collections::HashMap;
 use ::std::cell::UnsafeCell;
 use ::std::any::Any;
 use ::std::any::TypeId;
