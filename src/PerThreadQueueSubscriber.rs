@@ -18,9 +18,9 @@ impl<T: Terminate, MessageHandlerArguments: Debug + Copy, E: Debug> PerThreadQue
 	#[inline(always)]
 	pub fn new<MHR: MessageHandlersRegistration<MessageHandlerArguments=MessageHandlerArguments, E=E>>(queue_per_threads_publisher: QueuePerThreadQueuesPublisher<MessageHandlerArguments, E>, terminate: Arc<T>, message_handlers_registration: &MHR, message_handlers_registration_arguments: &MHR::Arguments) -> Self
 	{
-		let logical_core_identifier = LogicalCores::current_logical_core();
+		let hyper_thread_identifier = HyperThread::current().1;
 
-		let queue = queue_per_threads_publisher.get_queue(logical_core_identifier);
+		let queue = queue_per_threads_publisher.get_queue(hyper_thread_identifier);
 		message_handlers_registration.register_all_message_handlers(queue.message_handlers(), message_handlers_registration_arguments);
 
 		Self

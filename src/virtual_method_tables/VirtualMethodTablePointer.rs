@@ -19,6 +19,7 @@ impl VirtualMethodTablePointer
 {
 	/// Obtains a virtual method table (vtable) from anything.
 	#[inline(always)]
+	#[allow(deprecated)]
 	pub fn from_any<T: 'static>() -> Self
 	{
 		let mut fake: T = unsafe { uninitialized() };

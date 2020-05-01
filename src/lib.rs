@@ -25,4 +25,56 @@
 //! Currently only implemented for Android and Linux until the underlying magic ring buffer used gains support for more Operating Systems.
 
 
-#[cfg(any(target_os = "android", target_os = "linux"))] include!("lib.android_linux.rs");
+use static_assertions::assert_cfg;
+assert_cfg!(target_os = "linux");
+assert_cfg!(target_pointer_width = "64");
+
+
+use self::erased_boxed_functions::*;
+use self::virtual_method_tables::*;
+use arrayvec::ArrayVec;
+use linux_support::cpu::HyperThread;
+use magic_ring_buffer::*;
+use std::cell::UnsafeCell;
+use std::collections::HashMap;
+use std::any::Any;
+use std::any::TypeId;
+use std::fmt;
+use std::fmt::Debug;
+use std::fmt::Formatter;
+use std::mem::align_of;
+use std::mem::forget;
+use std::mem::size_of;
+use std::mem::transmute;
+#[allow(deprecated)] use std::mem::uninitialized;
+use std::ops::Deref;
+use std::ptr::NonNull;
+use std::ptr::null_mut;
+use std::ptr::write;
+use std::raw::TraitObject;
+use std::sync::Arc;
+use terminate::Terminate;
+use linux_support::bit_set::{BitSet, PerBitSetAwareData};
+
+
+/// Erased, boxed functions can be used as generic message dispatchers.
+pub mod erased_boxed_functions;
+
+
+/// Various wrappers around virtual method tables (vtables) which allow for them to be tagged.
+///
+/// A tagged pointer to a vtable allows one to mix multiple `dyn Trait` (fat pointers), using the tag to differentiated the trait type.
+#[allow(dead_code)]
+mod virtual_method_tables;
+
+
+include!("Dequeue.rs");
+include!("Enqueue.rs");
+include!("Message.rs");
+include!("MessageHandlersRegistration.rs");
+include!("MessageHeader.rs");
+include!("PerThreadQueueSubscriber.rs");
+include!("round_up_to_alignment.rs");
+include!("Queue.rs");
+include!("QueuePerThreadQueuesPublisher.rs");
+include!("VariablySized.rs");

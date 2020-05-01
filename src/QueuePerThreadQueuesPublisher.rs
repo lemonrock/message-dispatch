@@ -4,11 +4,11 @@
 
 /// Publishes to a queue used by a particular thread.
 ///
-/// Assumes a thread-per-logical core model.
+/// Assumes a thread-per-HyperThread model.
 #[derive(Debug, Clone)]
 pub struct QueuePerThreadQueuesPublisher<MessageHandlerArguments: Debug + Copy, E: Debug>
 {
-	queues: Arc<PerLogicalCoreData<Arc<Queue<MessageHandlerArguments, E>>>>,
+	queues: Arc<PerBitSetAwareData<HyperThread, Arc<Queue<MessageHandlerArguments, E>>>>,
 }
 
 unsafe impl<MessageHandlerArguments: Debug + Copy, E: Debug> Send for QueuePerThreadQueuesPublisher<MessageHandlerArguments, E>
@@ -23,29 +23,29 @@ impl<MessageHandlerArguments: Debug + Copy, E: Debug> QueuePerThreadQueuesPublis
 {
 	/// Allocate a new instance.
 	#[inline(always)]
-	pub fn allocate(logical_cores: &LogicalCores, queue_size_in_bytes: usize) -> Self
+	pub fn allocate(hyper_threads: &BitSet<HyperThread>, queue_size_in_bytes: usize) -> Self
 	{
 		Self
 		{
-			queues: Queue::queues(logical_cores, queue_size_in_bytes)
+			queues: Queue::queues(hyper_threads, queue_size_in_bytes)
 		}
 	}
 
-	/// Publish a message to be received by the queue for `logical_core_identifier`.
+	/// Publish a message to be received by the queue for `hyper_thread_identifier`.
 	///
-	/// Assumes a thread-per-logical core model.
+	/// Assumes a thread-per-HyperThread model.
 	///
 	/// If there is no registered queue, publishes to the queue which is assumed to exist for the current thread.
 	#[inline(always)]
-	pub fn publish_message<MessageContents, F: FnOnce(NonNull<MessageContents>)>(&self, logical_core_identifier: LogicalCoreIdentifier, compressed_type_identifier: CompressedTypeIdentifier, message_contents_constructor: F)
+	pub fn publish_message<MessageContents, F: FnOnce(NonNull<MessageContents>)>(&self, hyper_thread: HyperThread, compressed_type_identifier: CompressedTypeIdentifier, message_contents_constructor: F)
 	{
-		let queue = self.queues.get_or_current(logical_core_identifier);
+		let queue = self.queues.get_or_current(hyper_thread);
 		queue.enqueue(compressed_type_identifier, message_contents_constructor)
 	}
 
 	#[inline(always)]
-	fn get_queue(&self, logical_core_identifier: LogicalCoreIdentifier) -> Arc<Queue<MessageHandlerArguments, E>>
+	fn get_queue(&self, hyper_thread: HyperThread) -> Arc<Queue<MessageHandlerArguments, E>>
 	{
-		self.queues.get(logical_core_identifier).unwrap().clone()
+		self.queues.get(hyper_thread).unwrap().clone()
 	}
 }

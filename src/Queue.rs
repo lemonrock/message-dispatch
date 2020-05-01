@@ -106,14 +106,15 @@ impl<MessageHandlerArguments: Debug + Copy, E: Debug> Queue<MessageHandlerArgume
 
 	/// New set of per-thread queues.
 	#[inline(always)]
-	pub fn queues(logical_cores: &LogicalCores, queue_size_in_bytes: usize) -> Arc<PerLogicalCoreData<Arc<Self>>>
+	pub fn queues(hyper_threads: &BitSet<HyperThread>, queue_size_in_bytes: usize) -> Arc<PerBitSetAwareData<HyperThread, Arc<Self>>>
 	{
 		Arc::new
 		(
-			logical_cores.populate_per_logical_core_data(|_logical_core_identifier|
-			{
-				Queue::allocate_from_dev_shm("queue", queue_size_in_bytes).unwrap()
-			})
+			PerBitSetAwareData::new
+			(
+				hyper_threads,
+				|_hyper_thread| Self::allocate_from_dev_shm("queue", queue_size_in_bytes).unwrap()
+			)
 		)
 	}
 

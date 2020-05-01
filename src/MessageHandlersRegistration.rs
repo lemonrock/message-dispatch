@@ -15,6 +15,5 @@ pub trait MessageHandlersRegistration
 	type Arguments;
 
 	/// Register all messages handlers.
-	#[inline(always)]
 	fn register_all_message_handlers(&self, register: &mut impl Register<Self::MessageHandlerArguments, Result<(), Self::E>>, arguments: &Self::Arguments);
 }

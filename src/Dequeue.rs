@@ -6,6 +6,5 @@
 pub trait Dequeue<MessageHandlerArguments: Debug + Copy, E>
 {
 	/// Dequeues messages.
-	#[inline(always)]
 	fn dequeue(&self, terminate: &impl Terminate, message_handler_arguments: MessageHandlerArguments) -> Result<(), E>;
 }
