@@ -89,7 +89,7 @@ impl<MessageHandlerArguments: Debug + Copy, E: Debug> Queue<MessageHandlerArgume
 {
 	/// Allocates a new `Queue`.
 	#[inline(always)]
-	pub fn allocate_from_dev_shm(file_extension: &str, queue_size_in_bytes: usize) -> Result<Arc<Self>, MirroredMemoryMapCreationError>
+	pub fn new(defaults: &DefaultPageSizeAndHugePageSizes, buffer_size_not_page_aligned: NonZeroU64, page_size: PageSizeOrHugePageSize) -> Result<Arc<Self>, MirroredMemoryMapCreationError>
 	{
 		Ok
 		(
@@ -97,7 +97,7 @@ impl<MessageHandlerArguments: Debug + Copy, E: Debug> Queue<MessageHandlerArgume
 			(
 				Self
 				{
-					magic_ring_buffer: MagicRingBuffer::allocate_mirrored_and_not_swappable_from_dev_shm(file_extension, queue_size_in_bytes)?,
+					magic_ring_buffer: MagicRingBuffer::allocate(defaults, buffer_size_not_page_aligned, page_size)?,
 					message_handlers: Default::default(),
 				}
 			)
@@ -106,14 +106,14 @@ impl<MessageHandlerArguments: Debug + Copy, E: Debug> Queue<MessageHandlerArgume
 
 	/// New set of per-thread queues.
 	#[inline(always)]
-	pub fn queues(hyper_threads: &BitSet<HyperThread>, queue_size_in_bytes: usize) -> Arc<PerBitSetAwareData<HyperThread, Arc<Self>>>
+	pub fn queues(hyper_threads: &BitSet<HyperThread>, defaults: &DefaultPageSizeAndHugePageSizes, queue_size_in_bytes: NonZeroU64, page_size: PageSizeOrHugePageSize) -> Arc<PerBitSetAwareData<HyperThread, Arc<Self>>>
 	{
 		Arc::new
 		(
 			PerBitSetAwareData::new
 			(
 				hyper_threads,
-				|_hyper_thread| Self::allocate_from_dev_shm("queue", queue_size_in_bytes).unwrap()
+				|_hyper_thread| Self::new(defaults, buffer_size_not_page_aligned, page_size).unwrap()
 			)
 		)
 	}

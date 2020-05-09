@@ -33,6 +33,8 @@ assert_cfg!(target_pointer_width = "64");
 use self::erased_boxed_functions::*;
 use self::virtual_method_tables::*;
 use arrayvec::ArrayVec;
+use linux_support::bit_set::BitSet;
+use linux_support::bit_set::PerBitSetAwareData;
 use linux_support::cpu::HyperThread;
 use magic_ring_buffer::*;
 use std::cell::UnsafeCell;
@@ -54,7 +56,6 @@ use std::ptr::write;
 use std::raw::TraitObject;
 use std::sync::Arc;
 use terminate::Terminate;
-use linux_support::bit_set::{BitSet, PerBitSetAwareData};
 
 
 /// Erased, boxed functions can be used as generic message dispatchers.
@@ -68,8 +69,7 @@ pub mod erased_boxed_functions;
 mod virtual_method_tables;
 
 
-include!("Dequeue.rs");
-include!("Enqueue.rs");
+include!("Dequeue.rs");include!("Enqueue.rs");
 include!("Message.rs");
 include!("MessageHandlersRegistration.rs");
 include!("MessageHeader.rs");
