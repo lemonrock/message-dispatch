@@ -23,11 +23,11 @@ impl<MessageHandlerArguments: Debug + Copy, E: Debug> QueuePerThreadQueuesPublis
 {
 	/// Allocate a new instance.
 	#[inline(always)]
-	pub fn allocate(hyper_threads: &BitSet<HyperThread>, queue_size_in_bytes: usize) -> Self
+	pub fn allocate(hyper_threads: &BitSet<HyperThread>, defaults: &DefaultPageSizeAndHugePageSizes, queue_size_in_bytes: NonZeroU64, inclusive_maximum_bytes_wasted: usize) -> Self
 	{
 		Self
 		{
-			queues: Queue::queues(hyper_threads, queue_size_in_bytes)
+			queues: Queue::queues(hyper_threads, defaults, queue_size_in_bytes, inclusive_maximum_bytes_wasted)
 		}
 	}
 
