@@ -74,7 +74,7 @@ impl Message
 	{
 		let total_message_size_including_message_header_padding_to_align_before_message_contents_and_padding_to_align_after = buffer_sized_as_for_maximum_possible.len();
 		debug_assert_eq!(Self::largest_possible_total_message_size_including_message_header::<MessageContents>(), total_message_size_including_message_header_padding_to_align_before_message_contents_and_padding_to_align_after, "buffer_sized_as_for_maximum_possible is not");
-		debug_assert!(total_message_size_including_message_header_padding_to_align_before_message_contents_and_padding_to_align_after < ::std::u16::MAX as usize, "message is far too large");
+		debug_assert!(total_message_size_including_message_header_padding_to_align_before_message_contents_and_padding_to_align_after < u16::MAX as usize, "message is far too large");
 
 		let buffer_pointer = buffer_sized_as_for_maximum_possible.as_ptr() as usize;
 		debug_assert_eq!(buffer_pointer % align_of::<MessageHeader>(), 0, "buffer_sized_as_for_maximum_possible is not correctly aligned for a MessageHeader");
