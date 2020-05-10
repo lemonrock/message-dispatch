@@ -5,14 +5,17 @@
 /// A queue of variably-sized messages of different types (eg structs, traits, etc), suitable for many-writer, single consumer usage.
 ///
 /// Ideal for a thread control queue.
+///
+/// `MessageHandlerArguments` must be common to all possible message types (all possible `MessageContents` and `CompressedTypeIdentifier`s).
+/// `DequeuedMessageProcessingError` must be common to all possible message types (all possible `MessageContents` and `CompressedTypeIdentifier`s).
 #[derive(Debug)]
-pub struct Queue<MessageHandlerArguments: Debug + Copy, E: Debug>
+pub struct Queue<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debug>
 {
 	magic_ring_buffer: MagicRingBuffer,
-	message_handlers: UnsafeCell<MutableTypeErasedBoxedFunctionCompressedMap<MessageHandlerArguments, Result<(), E>>>,
+	message_handlers: UnsafeCell<MutableTypeErasedBoxedFunctionCompressedMap<MessageHandlerArguments, Result<(), DequeuedMessageProcessingError>>>,
 }
 
-impl<MessageHandlerArguments: Debug + Copy, E: Debug> Drop for Queue<MessageHandlerArguments, E>
+impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debug> Drop for Queue<MessageHandlerArguments, DequeuedMessageProcessingError>
 {
 	#[inline(always)]
 	fn drop(&mut self)
@@ -20,11 +23,11 @@ impl<MessageHandlerArguments: Debug + Copy, E: Debug> Drop for Queue<MessageHand
 		let message_handlers = self.message_handlers();
 		while
 		{
-			let more_data_to_read = self.magic_ring_buffer.single_reader_read_some_data::<E, _>
+			let more_data_to_read = self.magic_ring_buffer.single_reader_read_some_data::<DequeuedMessageProcessingError, _>
 			(
 				|buffer|
 				{
-					Message::process_next_message_in_buffer::<Result<(), E>, _>
+					Message::process_next_message_in_buffer::<Result<(), DequeuedMessageProcessingError>, _>
 					(
 						buffer,
 						|compressed_type_identifier, receiver|
@@ -43,7 +46,7 @@ impl<MessageHandlerArguments: Debug + Copy, E: Debug> Drop for Queue<MessageHand
 	}
 }
 
-impl<MessageHandlerArguments: Debug + Copy, E: Debug> Enqueue for Queue<MessageHandlerArguments, E>
+impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debug> Enqueue for Queue<MessageHandlerArguments, DequeuedMessageProcessingError>
 {
 	#[inline(always)]
 	fn enqueue<MessageContents>(&self, compressed_type_identifier: CompressedTypeIdentifier, message_contents_constructor: impl FnOnce(NonNull<MessageContents>))
@@ -52,20 +55,20 @@ impl<MessageHandlerArguments: Debug + Copy, E: Debug> Enqueue for Queue<MessageH
 	}
 }
 
-impl<MessageHandlerArguments: Debug + Copy, E: Debug> Dequeue<MessageHandlerArguments, E> for Queue<MessageHandlerArguments, E>
+impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debug> Dequeue<MessageHandlerArguments, DequeuedMessageProcessingError> for Queue<MessageHandlerArguments, DequeuedMessageProcessingError>
 {
 	/// Dequeues messages.
 	#[inline(always)]
-	fn dequeue(&self, terminate: &impl Terminate, message_handler_arguments: MessageHandlerArguments) -> Result<(), E>
+	fn dequeue(&self, terminate: &impl Terminate, message_handler_arguments: MessageHandlerArguments) -> Result<(), DequeuedMessageProcessingError>
 	{
 		let message_handlers = self.message_handlers();
 		while
 		{
-			let more_data_to_read = self.magic_ring_buffer.single_reader_read_some_data::<E, _>
+			let more_data_to_read = self.magic_ring_buffer.single_reader_read_some_data::<DequeuedMessageProcessingError, _>
 			(
 				|buffer|
 				{
-					Message::process_next_message_in_buffer::<Result<(), E>, _>
+					Message::process_next_message_in_buffer::<Result<(), DequeuedMessageProcessingError>, _>
 					(
 						buffer,
 						|compressed_type_identifier, receiver|
@@ -85,7 +88,7 @@ impl<MessageHandlerArguments: Debug + Copy, E: Debug> Dequeue<MessageHandlerArgu
 	}
 }
 
-impl<MessageHandlerArguments: Debug + Copy, E: Debug> Queue<MessageHandlerArguments, E>
+impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debug> Queue<MessageHandlerArguments, DequeuedMessageProcessingError>
 {
 	/// Allocates a new `Queue`.
 	#[inline(always)]
@@ -119,7 +122,7 @@ impl<MessageHandlerArguments: Debug + Copy, E: Debug> Queue<MessageHandlerArgume
 	}
 
 	#[inline(always)]
-	pub(crate) fn message_handlers(&self) -> &mut MutableTypeErasedBoxedFunctionCompressedMap<MessageHandlerArguments, Result<(), E>>
+	pub(crate) fn message_handlers(&self) -> &mut MutableTypeErasedBoxedFunctionCompressedMap<MessageHandlerArguments, Result<(), DequeuedMessageProcessingError>>
 	{
 		unsafe { &mut * self.message_handlers.get() }
 	}

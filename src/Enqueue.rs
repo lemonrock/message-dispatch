@@ -3,6 +3,8 @@
 
 
 /// Access to the enqueue operations of a queue.
+///
+/// All implementations of `MessageContents` must share the same `DequeuedMessageProcessingError` when dequeued and processed with `message_handlers.call_and_drop_in_place()`.
 pub trait Enqueue
 {
 	/// Enqueue a message.

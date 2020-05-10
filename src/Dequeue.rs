@@ -3,8 +3,10 @@
 
 
 /// Access to the dequeue operations of a queue.
-pub trait Dequeue<MessageHandlerArguments: Debug + Copy, E>
+///
+/// All implementations of `MessageContents` when specified in `Enqueue::enqueue()`. must share the same `DequeuedMessageProcessingError` when dequeued and processed.
+pub trait Dequeue<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError>
 {
 	/// Dequeues messages.
-	fn dequeue(&self, terminate: &impl Terminate, message_handler_arguments: MessageHandlerArguments) -> Result<(), E>;
+	fn dequeue(&self, terminate: &impl Terminate, message_handler_arguments: MessageHandlerArguments) -> Result<(), DequeuedMessageProcessingError>;
 }

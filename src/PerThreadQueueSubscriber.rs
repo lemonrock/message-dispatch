@@ -3,20 +3,23 @@
 
 
 /// A subscriber to a queue.
+///
+/// `MessageHandlerArguments` must be common to all possible message types (all possible `MessageContents` and `CompressedTypeIdentifier`s).
+/// `DequeuedMessageProcessingError` must be common to all possible message types (all possible `MessageContents` and `CompressedTypeIdentifier`s).
 #[derive(Debug)]
-pub struct PerThreadQueueSubscriber<T: Terminate, MessageHandlerArguments: Debug + Copy, E: Debug>
+pub struct PerThreadQueueSubscriber<T: Terminate, MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debug>
 {
-	queue: Arc<Queue<MessageHandlerArguments, E>>,
+	queue: Arc<Queue<MessageHandlerArguments, DequeuedMessageProcessingError>>,
 	terminate: Arc<T>,
 }
 
-impl<T: Terminate, MessageHandlerArguments: Debug + Copy, E: Debug> PerThreadQueueSubscriber<T, MessageHandlerArguments, E>
+impl<T: Terminate, MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debug> PerThreadQueueSubscriber<T, MessageHandlerArguments, DequeuedMessageProcessingError>
 {
 	/// Creates a new instance for the current logical core.
 	///
 	/// Thus must only be run on the thread that is doing subscribing.
 	#[inline(always)]
-	pub fn new<MHR: MessageHandlersRegistration<MessageHandlerArguments=MessageHandlerArguments, E=E>>(queue_per_threads_publisher: QueuePerThreadQueuesPublisher<MessageHandlerArguments, E>, terminate: Arc<T>, message_handlers_registration: &MHR, message_handlers_registration_arguments: &MHR::Arguments) -> Self
+	pub fn new<MHR: MessageHandlersRegistration<MessageHandlerArguments=MessageHandlerArguments, E=DequeuedMessageProcessingError>>(queue_per_threads_publisher: QueuePerThreadQueuesPublisher<MessageHandlerArguments, DequeuedMessageProcessingError>, terminate: Arc<T>, message_handlers_registration: &MHR, message_handlers_registration_arguments: &MHR::Arguments) -> Self
 	{
 		let hyper_thread_identifier = HyperThread::current().1;
 
@@ -30,9 +33,9 @@ impl<T: Terminate, MessageHandlerArguments: Debug + Copy, E: Debug> PerThreadQue
 		}
 	}
 
-	/// Receives and handles messages; short-circuits if `terminate` becomes true or a message handler returns an error `E`.
+	/// Receives and handles messages; short-circuits if `self.terminate` becomes true or a message handler returns an error `DequeuedMessageProcessingError`.
 	#[inline(always)]
-	pub fn receive_and_handle_messages(&self, message_handler_arguments: MessageHandlerArguments) -> Result<(), E>
+	pub fn receive_and_handle_messages(&self, message_handler_arguments: MessageHandlerArguments) -> Result<(), DequeuedMessageProcessingError>
 	{
 		self.queue.dequeue(self.terminate.deref(), message_handler_arguments)
 	}
