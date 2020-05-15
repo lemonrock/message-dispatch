@@ -15,6 +15,7 @@
       <sourceFolder url="file://$MODULE_DIR$/../linux-support/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../linux-support/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../linux-support/benches" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../terminate/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/../linux-support/target" />
       <excludeFolder url="file://$MODULE_DIR$/../magic-ring-buffer/target" />
       <excludeFolder url="file://$MODULE_DIR$/.cargo" />

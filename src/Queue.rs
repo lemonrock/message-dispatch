@@ -92,7 +92,7 @@ impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debu
 {
 	/// Allocates a new `Queue`.
 	#[inline(always)]
-	pub fn new(defaults: &DefaultPageSizeAndHugePageSizes, buffer_size_not_page_aligned: NonZeroU64, inclusive_maximum_bytes_wasted: usize) -> Result<Arc<Self>, MirroredMemoryMapCreationError>
+	pub fn new(defaults: &DefaultPageSizeAndHugePageSizes, preferred_buffer_size: NonZeroU64, inclusive_maximum_bytes_wasted: u64) -> Result<Arc<Self>, MirroredMemoryMapCreationError>
 	{
 		Ok
 		(
@@ -100,7 +100,7 @@ impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debu
 			(
 				Self
 				{
-					magic_ring_buffer: MagicRingBuffer::allocate(defaults, buffer_size_not_page_aligned, inclusive_maximum_bytes_wasted)?,
+					magic_ring_buffer: MagicRingBuffer::allocate(defaults, preferred_buffer_size, inclusive_maximum_bytes_wasted)?,
 					message_handlers: Default::default(),
 				}
 			)
@@ -109,14 +109,14 @@ impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debu
 
 	/// New set of per-thread queues.
 	#[inline(always)]
-	pub fn queues(hyper_threads: &BitSet<HyperThread>, defaults: &DefaultPageSizeAndHugePageSizes, buffer_size_not_page_aligned: NonZeroU64, inclusive_maximum_bytes_wasted: usize) -> Arc<PerBitSetAwareData<HyperThread, Arc<Self>>>
+	pub fn queues(hyper_threads: &BitSet<HyperThread>, defaults: &DefaultPageSizeAndHugePageSizes, preferred_buffer_size: NonZeroU64, inclusive_maximum_bytes_wasted: u64) -> Arc<PerBitSetAwareData<HyperThread, Arc<Self>>>
 	{
 		Arc::new
 		(
 			PerBitSetAwareData::new
 			(
 				hyper_threads,
-				|_hyper_thread| Self::new(defaults, buffer_size_not_page_aligned, inclusive_maximum_bytes_wasted).unwrap()
+				|_hyper_thread| Self::new(defaults, preferred_buffer_size, inclusive_maximum_bytes_wasted).unwrap()
 			)
 		)
 	}
