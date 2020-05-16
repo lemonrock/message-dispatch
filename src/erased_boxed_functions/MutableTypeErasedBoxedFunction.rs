@@ -3,16 +3,14 @@
 
 
 /// A wrapper to hold a `FnMut(Receiver) -> R` closure which erases the type of `Receiver` so that multiple instances can be created and used as, say, handlers of different messages in maps.
-#[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Hash)]
-pub(crate) struct MutableTypeErasedBoxedFunction<Arguments, Returns>
+pub(crate) struct MutableTypeErasedBoxedFunction<MessageHandlerArguments, MessageHandlerReturns>
 {
 	boxed_function_pointer: NonNull<BoxedFunctionPointer>,
-	call_boxed_function_pointer: fn(NonNull<BoxedFunctionPointer>, NonNull<Receiver>, Arguments) -> Returns,
+	call_boxed_function_pointer: fn(NonNull<BoxedFunctionPointer>, NonNull<VariablySizedMessageBody>, &MessageHandlerArguments) -> MessageHandlerReturns,
 	drop_boxed_function_pointer: fn(NonNull<BoxedFunctionPointer>),
-	#[cfg(debug_assertions)] receiver_type_identifier: TypeId,
 }
 
-impl<Arguments, Returns> Drop for MutableTypeErasedBoxedFunction<Arguments, Returns>
+impl<MessageHandlerArguments, MessageHandlerReturns> Drop for MutableTypeErasedBoxedFunction<MessageHandlerArguments, MessageHandlerReturns>
 {
 	#[inline(always)]
 	fn drop(&mut self)
@@ -21,53 +19,47 @@ impl<Arguments, Returns> Drop for MutableTypeErasedBoxedFunction<Arguments, Retu
 	}
 }
 
-impl<Arguments, Returns> MutableTypeErasedBoxedFunction<Arguments, Returns>
+impl<MessageHandlerArguments, MessageHandlerReturns> MutableTypeErasedBoxedFunction<MessageHandlerArguments, MessageHandlerReturns>
 {
 	/// Creates a new instance, wrapping `function`.
 	///
 	/// `function` will be moved from the stack to the heap.
 	#[inline(always)]
-	pub(crate) fn new<Function: FnMut(&mut Receiver, Arguments) -> Returns, Receiver: 'static + ?Sized>(function: Function) -> Self
+	pub(crate) fn new<MessageHandler: FnMut(&mut FixedSizedMessageBody, &MessageHandlerArguments) -> MessageHandlerReturns, FixedSizedMessageBody: Sized>(message_handler: MessageHandler) -> Self
 	{
-		#[inline(always)]
-		fn call_boxed_function_pointer<Function: FnMut(&mut Receiver, Arguments) -> Returns, Receiver: 'static + ?Sized, Arguments, Returns>(function: &mut Function, receiver: &mut Receiver, arguments: Arguments) -> Returns
+		let call_boxed_function_pointer: for<'message_handler, 'message_body, 'message_arguments> fn(&'message_handler mut MessageHandler, &'message_body mut FixedSizedMessageBody, &'message_arguments MessageHandlerArguments) -> MessageHandlerReturns = Self::call_boxed_function::<MessageHandler, FixedSizedMessageBody>;
+		let drop_boxed_function_pointer: fn(NonNull<MessageHandler>) = Self::drop_boxed_function::<MessageHandler, FixedSizedMessageBody>;
+		
+		unsafe
 		{
-			function(receiver, arguments)
-		}
-
-		#[inline(always)]
-		fn drop_boxed_function_pointer<Function: FnMut(&mut Receiver, Arguments) -> Returns, Receiver: 'static + ?Sized, Arguments, Returns>(boxed_function_pointer: NonNull<Function>)
-		{
-			drop(unsafe { Box::from_raw(boxed_function_pointer.as_ptr()) });
-		}
-
-		let call_boxed_function_pointer: for<'r, 's> fn(&'r mut Function, &'s mut Receiver, Arguments) -> Returns = call_boxed_function_pointer::<Function, Receiver, Arguments, Returns>;
-		let drop_boxed_function_pointer: fn(NonNull<Function>) = drop_boxed_function_pointer::<Function, Receiver, Arguments, Returns>;
-
-		MutableTypeErasedBoxedFunction
-		{
-			boxed_function_pointer: unsafe { NonNull::new_unchecked(Box::into_raw(Box::new(function)) as *mut BoxedFunctionPointer) },
-			call_boxed_function_pointer: unsafe { transmute(call_boxed_function_pointer) },
-			drop_boxed_function_pointer: unsafe { transmute(drop_boxed_function_pointer) },
-			#[cfg(debug_assertions)] receiver_type_identifier: TypeId::of::<Receiver>(),
+			Self
+			{
+				boxed_function_pointer: NonNull::new_unchecked(Box::into_raw(Box::new(message_handler)) as *mut BoxedFunctionPointer),
+				call_boxed_function_pointer: transmute(call_boxed_function_pointer),
+				drop_boxed_function_pointer: transmute(drop_boxed_function_pointer),
+			}
 		}
 	}
 
-	/// A very dangerous method that will fail in subtle yet fatal ways if `receiver` is not the same type used when `new()` was called.
+	/// A very dangerous method that will fail in subtle yet fatal ways if `variably_sized_message_body` is not the same type used when `new()` was called.
 	///
-	/// As the whole purpose of this struct is to erase the type of `receiver`, this requirement is not enforced by the type system.
-	///
-	/// When debug assertions are enabled, a runtime type check is made and will panic if it fails.
+	/// As the whole purpose of this struct is to erase the type of `variably_sized_message_body`, this requirement is not enforced by the type system.
 	#[inline(always)]
-	pub(crate) fn call<'this: 'receiver, 'receiver, Receiver: 'static + ?Sized>(&'this mut self, receiver: &'receiver mut Receiver, arguments: Arguments) -> Returns
+	pub(crate) fn call(&self, variably_sized_message_body: NonNull<VariablySizedMessageBody>, arguments: &MessageHandlerArguments) -> MessageHandlerReturns
 	{
-		#[cfg(debug_assertions)]
-		{
-			debug_assert_eq!(TypeId::of::<Receiver>(), self.receiver_type_identifier, "Receiver type mismatch")
-		}
-
-		let function_pointer: fn(NonNull<BoxedFunctionPointer>, &'receiver mut Receiver, Arguments) -> Returns = unsafe { transmute(self.call_boxed_function_pointer) };
-
-		(function_pointer)(self.boxed_function_pointer, receiver, arguments)
+		(self.call_boxed_function_pointer)(self.boxed_function_pointer, variably_sized_message_body, arguments)
 	}
+	
+	#[inline(always)]
+	fn call_boxed_function<MessageHandler: FnMut(&mut FixedSizedMessageBody, &MessageHandlerArguments) -> MessageHandlerReturns, FixedSizedMessageBody: Sized>(message_handler: &mut MessageHandler, receiver: &mut FixedSizedMessageBody, arguments: &MessageHandlerArguments) -> MessageHandlerReturns
+	{
+		message_handler(receiver, arguments)
+	}
+	
+	#[inline(always)]
+	fn drop_boxed_function<MessageHandler: FnMut(&mut FixedSizedMessageBody, &MessageHandlerArguments) -> MessageHandlerReturns, FixedSizedMessageBody: Sized>(boxed_function_pointer: NonNull<MessageHandler>)
+	{
+		drop(unsafe { Box::from_raw(boxed_function_pointer.as_ptr()) });
+	}
+	
 }

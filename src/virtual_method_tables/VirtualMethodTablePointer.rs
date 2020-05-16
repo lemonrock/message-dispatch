@@ -47,6 +47,7 @@ impl VirtualMethodTablePointer
 
 	/// Size.
 	#[inline(always)]
+	#[allow(dead_code)]
 	pub fn size(self) -> usize
 	{
 		unsafe { *(self.0.as_ptr().add(1) as *mut usize) }
@@ -54,6 +55,7 @@ impl VirtualMethodTablePointer
 
 	/// Alignment.
 	#[inline(always)]
+	#[allow(dead_code)]
 	pub fn alignment(self) -> usize
 	{
 		unsafe { *(self.0.as_ptr().add(2) as *mut usize) }
@@ -61,6 +63,7 @@ impl VirtualMethodTablePointer
 
 	/// A pointer to the first function in the trait definition.
 	#[inline(always)]
+	#[allow(dead_code)]
 	pub fn first_trait_function_pointer(self) -> usize
 	{
 		let raw_pointer = unsafe { *(self.0.as_ptr().add(3) as *mut usize) };

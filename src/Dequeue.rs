@@ -4,9 +4,9 @@
 
 /// Access to the dequeue operations of a queue.
 ///
-/// All implementations of `MessageContents` when specified in `Enqueue::enqueue()`. must share the same `DequeuedMessageProcessingError` when dequeued and processed.
-pub trait Dequeue<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError>
+/// All implementations of `FixedSizeMessageBody` when specified in `Enqueue::enqueue()`. must share the same `DequeuedMessageProcessingError` when dequeued and processed.
+trait Dequeue<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error>
 {
 	/// Dequeues messages.
-	fn dequeue(&self, terminate: &impl Terminate, message_handler_arguments: MessageHandlerArguments) -> Result<(), DequeuedMessageProcessingError>;
+	fn dequeue(&self, terminate: &Arc<impl Terminate>, message_handler_arguments: &MessageHandlerArguments) -> Result<(), DequeuedMessageProcessingError>;
 }

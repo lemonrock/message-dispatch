@@ -6,16 +6,17 @@
 ///
 /// Ideal for a thread control queue.
 ///
-/// `MessageHandlerArguments` must be common to all possible message types (all possible `MessageContents` and `CompressedTypeIdentifier`s).
-/// `DequeuedMessageProcessingError` must be common to all possible message types (all possible `MessageContents` and `CompressedTypeIdentifier`s).
-#[derive(Debug)]
-pub struct Queue<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debug>
+/// `MessageHandlerArguments` must be common to all possible message types (all possible `FixedSizeMessageBody` and `CompressedTypeIdentifier`s).
+/// `DequeuedMessageProcessingError` must be common to all possible message types (all possible `FixedSizeMessageBody` and `CompressedTypeIdentifier`s).
+///
+/// Both a sending thread and the receiving thread have to agree on `message_handlers` so that `drop()` can work.
+struct Queue<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error>
 {
 	magic_ring_buffer: MagicRingBuffer,
-	message_handlers: UnsafeCell<MutableTypeErasedBoxedFunctionCompressedMap<MessageHandlerArguments, Result<(), DequeuedMessageProcessingError>>>,
+	message_handlers: MessageHandlers<MessageHandlerArguments, Result<(), DequeuedMessageProcessingError>>,
 }
 
-impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debug> Drop for Queue<MessageHandlerArguments, DequeuedMessageProcessingError>
+impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Drop for Queue<MessageHandlerArguments, DequeuedMessageProcessingError>
 {
 	#[inline(always)]
 	fn drop(&mut self)
@@ -30,9 +31,9 @@ impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debu
 					Message::process_next_message_in_buffer::<Result<(), DequeuedMessageProcessingError>, _>
 					(
 						buffer,
-						|compressed_type_identifier, receiver|
+						|compressed_type_identifier, variably_sized_message_body|
 						{
-							message_handlers.drop_in_place(compressed_type_identifier, receiver);
+							message_handlers.drop_in_place(compressed_type_identifier, variably_sized_message_body);
 							Ok(())
 						}
 					)
@@ -46,20 +47,26 @@ impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debu
 	}
 }
 
-impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debug> Enqueue for Queue<MessageHandlerArguments, DequeuedMessageProcessingError>
+impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Enqueue for Queue<MessageHandlerArguments, DequeuedMessageProcessingError>
 {
 	#[inline(always)]
-	fn enqueue<MessageContents>(&self, compressed_type_identifier: CompressedTypeIdentifier, message_contents_constructor: impl FnOnce(NonNull<MessageContents>))
+	fn fixed_sized_message_body_compressed_type_identifier<FixedSizeMessageBody: 'static + Sized>(&self) -> CompressedTypeIdentifier
 	{
-		Message::enqueue(&self.magic_ring_buffer, compressed_type_identifier, message_contents_constructor)
+		self.message_handlers.find_fixed_size_message_body_compressed_type_identifier::<FixedSizeMessageBody>().expect("Unregistered FixedSizeMessageBody")
+	}
+	
+	#[inline(always)]
+	unsafe fn enqueue<FixedSizeMessageBody: Sized>(&self, fixed_sized_message_body_compressed_type_identifier: CompressedTypeIdentifier, fixed_size_message_body_constructor: impl FnOnce(NonNull<FixedSizeMessageBody>))
+	{
+		Message::enqueue(&self.magic_ring_buffer, fixed_sized_message_body_compressed_type_identifier, fixed_size_message_body_constructor)
 	}
 }
 
-impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debug> Dequeue<MessageHandlerArguments, DequeuedMessageProcessingError> for Queue<MessageHandlerArguments, DequeuedMessageProcessingError>
+impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Dequeue<MessageHandlerArguments, DequeuedMessageProcessingError> for Queue<MessageHandlerArguments, DequeuedMessageProcessingError>
 {
 	/// Dequeues messages.
 	#[inline(always)]
-	fn dequeue(&self, terminate: &impl Terminate, message_handler_arguments: MessageHandlerArguments) -> Result<(), DequeuedMessageProcessingError>
+	fn dequeue(&self, terminate: &Arc<impl Terminate>, message_handler_arguments: &MessageHandlerArguments) -> Result<(), DequeuedMessageProcessingError>
 	{
 		let message_handlers = self.message_handlers();
 		while
@@ -71,9 +78,9 @@ impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debu
 					Message::process_next_message_in_buffer::<Result<(), DequeuedMessageProcessingError>, _>
 					(
 						buffer,
-						|compressed_type_identifier, receiver|
+						|compressed_type_identifier, variably_sized_message_body|
 						{
-							message_handlers.call_and_drop_in_place(compressed_type_identifier, receiver, message_handler_arguments)
+							message_handlers.call_and_drop_in_place(compressed_type_identifier, variably_sized_message_body, message_handler_arguments.clone())
 						}
 					)
 				}
@@ -88,42 +95,25 @@ impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debu
 	}
 }
 
-impl<MessageHandlerArguments: Debug + Copy, DequeuedMessageProcessingError: Debug> Queue<MessageHandlerArguments, DequeuedMessageProcessingError>
+impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Queue<MessageHandlerArguments, DequeuedMessageProcessingError>
 {
 	/// Allocates a new `Queue`.
 	#[inline(always)]
-	pub fn new(defaults: &DefaultPageSizeAndHugePageSizes, preferred_buffer_size: NonZeroU64, inclusive_maximum_bytes_wasted: u64) -> Result<Arc<Self>, MirroredMemoryMapCreationError>
+	pub(crate) fn new(message_handlers: MessageHandlers<MessageHandlerArguments, Result<(), DequeuedMessageProcessingError>>, defaults: &DefaultPageSizeAndHugePageSizes, queue_size_in_bytes: NonZeroU64, inclusive_maximum_bytes_wasted: u64) -> Result<Self, MirroredMemoryMapCreationError>
 	{
 		Ok
 		(
-			Arc::new
-			(
-				Self
-				{
-					magic_ring_buffer: MagicRingBuffer::allocate(defaults, preferred_buffer_size, inclusive_maximum_bytes_wasted)?,
-					message_handlers: Default::default(),
-				}
-			)
+			Self
+			{
+				magic_ring_buffer: MagicRingBuffer::allocate(defaults, queue_size_in_bytes, inclusive_maximum_bytes_wasted)?,
+				message_handlers,
+			}
 		)
 	}
-
-	/// New set of per-thread queues.
+	
 	#[inline(always)]
-	pub fn queues(hyper_threads: &BitSet<HyperThread>, defaults: &DefaultPageSizeAndHugePageSizes, preferred_buffer_size: NonZeroU64, inclusive_maximum_bytes_wasted: u64) -> Arc<PerBitSetAwareData<HyperThread, Arc<Self>>>
+	fn message_handlers(&self) -> &MessageHandlers<MessageHandlerArguments, Result<(), DequeuedMessageProcessingError>>
 	{
-		Arc::new
-		(
-			PerBitSetAwareData::new
-			(
-				hyper_threads,
-				|_hyper_thread| Self::new(defaults, preferred_buffer_size, inclusive_maximum_bytes_wasted).unwrap()
-			)
-		)
-	}
-
-	#[inline(always)]
-	pub(crate) fn message_handlers(&self) -> &mut MutableTypeErasedBoxedFunctionCompressedMap<MessageHandlerArguments, Result<(), DequeuedMessageProcessingError>>
-	{
-		unsafe { &mut * self.message_handlers.get() }
+		&self.message_handlers
 	}
 }

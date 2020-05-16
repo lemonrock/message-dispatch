@@ -7,28 +7,28 @@
 struct MessageHeader
 {
 	compressed_type_identifier: CompressedTypeIdentifier,
-	number_of_bytes_padding_to_align_message_contents: u8,
-	total_message_size_including_message_header_padding_to_align_before_message_contents_and_padding_to_align_after: u16,
+	number_of_bytes_padding_to_align_message_body: u8,
+	total_message_size_including_message_header_padding_to_align_before_message_body_and_padding_to_align_after: u16,
 }
 
 impl MessageHeader
 {
 	#[inline(always)]
-	fn message_contents(&mut self) -> &mut VariablySized
+	fn variably_sized_message_body(&mut self) -> NonNull<VariablySizedMessageBody>
 	{
-		unsafe { &mut * (self.message_contents_pointer() as *mut VariablySized) }
+		unsafe { NonNull::new_unchecked(self.message_body_pointer() as *mut VariablySizedMessageBody) }
 	}
 
 	#[inline(always)]
-	fn total_message_size_including_message_header_padding_to_align_before_message_contents_and_padding_to_align_after(&self) -> usize
+	fn total_message_size_including_message_header_padding_to_align_before_message_body_and_padding_to_align_after(&self) -> usize
 	{
-		self.total_message_size_including_message_header_padding_to_align_before_message_contents_and_padding_to_align_after as usize
+		self.total_message_size_including_message_header_padding_to_align_before_message_body_and_padding_to_align_after as usize
 	}
 
 	#[inline(always)]
-	fn message_contents_pointer(&self) -> usize
+	fn message_body_pointer(&self) -> usize
 	{
-		self.base_pointer() + self.number_of_bytes_padding_to_align_message_contents()
+		self.base_pointer() + self.number_of_bytes_padding_to_align_message_body()
 	}
 
 	#[inline(always)]
@@ -38,8 +38,8 @@ impl MessageHeader
 	}
 
 	#[inline(always)]
-	fn number_of_bytes_padding_to_align_message_contents(&self) -> usize
+	fn number_of_bytes_padding_to_align_message_body(&self) -> usize
 	{
-		self.number_of_bytes_padding_to_align_message_contents as usize
+		self.number_of_bytes_padding_to_align_message_body as usize
 	}
 }

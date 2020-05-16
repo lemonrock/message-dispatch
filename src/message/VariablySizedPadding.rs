@@ -4,14 +4,14 @@
 
 extern
 {
-	type VariablySized;
+	type VariablySizedPadding;
 }
 
-impl Debug for VariablySized
+impl Debug for VariablySizedPadding
 {
 	#[inline(always)]
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result
 	{
-		write!(f, "VariablySized")
+		write!(f, "VariablySizedPadding")
 	}
 }

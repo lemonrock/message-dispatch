@@ -31,17 +31,18 @@ assert_cfg!(target_pointer_width = "64");
 
 
 use self::erased_boxed_functions::*;
+use self::message::*;
 use self::virtual_method_tables::*;
-use arrayvec::ArrayVec;
+use arrayvec::{ArrayVec, Array};
 use linux_support::bit_set::BitSet;
 use linux_support::bit_set::PerBitSetAwareData;
 use linux_support::cpu::HyperThread;
 use linux_support::memory::huge_pages::DefaultPageSizeAndHugePageSizes;
 use magic_ring_buffer::*;
-use std::cell::UnsafeCell;
 use std::collections::HashMap;
 use std::any::Any;
 use std::any::TypeId;
+use std::error;
 use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Formatter;
@@ -51,7 +52,6 @@ use std::mem::size_of;
 use std::mem::transmute;
 #[allow(deprecated)] use std::mem::uninitialized;
 use std::num::NonZeroU64;
-use std::ops::Deref;
 use std::ptr::NonNull;
 use std::ptr::null_mut;
 use std::ptr::write;
@@ -67,16 +67,17 @@ pub mod erased_boxed_functions;
 /// Various wrappers around virtual method tables (vtables) which allow for them to be tagged.
 ///
 /// A tagged pointer to a vtable allows one to mix multiple `dyn Trait` (fat pointers), using the tag to differentiated the trait type.
-#[allow(dead_code)]
 mod virtual_method_tables;
 
 
-include!("Dequeue.rs");include!("Enqueue.rs");
-include!("Message.rs");
-include!("MessageHandlersRegistration.rs");
-include!("MessageHeader.rs");
-include!("PerThreadQueueSubscriber.rs");
-include!("round_up_to_alignment.rs");
+mod message;
+
+
+include!("CompressedTypeIdentifier.rs");
+include!("Dequeue.rs");
+include!("Enqueue.rs");
+include!("MessageHandlers.rs");
 include!("Queue.rs");
-include!("QueuePerThreadQueuesPublisher.rs");
-include!("VariablySized.rs");
+include!("Queues.rs");
+include!("round_up_to_alignment.rs");
+include!("Subscriber.rs");

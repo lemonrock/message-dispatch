@@ -19,8 +19,10 @@
 /// * On all systems, a virtual method table can never be the null pointer (all zeros).
 /// * However, 52-bit pointers are proposed for ARMv8.2 and 56-bit pointers by Intel for x86-64 (<https://software.intel.com/sites/default/files/managed/2b/80/5-level_paging_white_paper.pdf>), but these features are a way off and will require opt-in by Linux.
 #[derive(Default, Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct TaggedNonNullPointer(u64);
+#[allow(dead_code)]
+pub(crate) struct TaggedNonNullPointer(u64);
 
+#[allow(dead_code)]
 impl TaggedNonNullPointer
 {
 	#[cfg(target_pointer_width = "64")] const AlignedPointerShift: u64 = 3;

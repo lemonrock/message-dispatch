@@ -4,9 +4,20 @@
 
 /// Access to the enqueue operations of a queue.
 ///
-/// All implementations of `MessageContents` must share the same `DequeuedMessageProcessingError` when dequeued and processed with `message_handlers.call_and_drop_in_place()`.
-pub trait Enqueue
+/// All implementations of `FixedSizeMessageBody` must share the same `DequeuedMessageProcessingError` when dequeued and processed with `message_handlers.call_and_drop_in_place()`.
+trait Enqueue
 {
-	/// Enqueue a message.
-	fn enqueue<MessageContents>(&self, compressed_type_identifier: CompressedTypeIdentifier, message_contents_constructor: impl FnOnce(NonNull<MessageContents>));
+	/// Finds a fixed size message body compressed type identifier for direct use of `enqueue()`.
+	fn fixed_sized_message_body_compressed_type_identifier<FixedSizeMessageBody: 'static + Sized>(&self) -> CompressedTypeIdentifier;
+	
+	/// Slow but safe; unnecessary once `fixed_sized_message_body_compressed_type_identifier()` is used.
+	#[inline(always)]
+	fn enqueue_slow_but_safe<FixedSizeMessageBody: 'static + Sized>(&self, fixed_size_message_body_constructor: impl FnOnce(NonNull<FixedSizeMessageBody>))
+	{
+		let fixed_sized_message_body_compressed_type_identifier = self.fixed_sized_message_body_compressed_type_identifier::<FixedSizeMessageBody>();
+		unsafe { self.enqueue(fixed_sized_message_body_compressed_type_identifier, fixed_size_message_body_constructor) }
+	}
+	
+	/// Enqueue a message unsafely.
+	unsafe fn enqueue<FixedSizeMessageBody: Sized>(&self, fixed_sized_message_body_compressed_type_identifier: CompressedTypeIdentifier, fixed_size_message_body_constructor: impl FnOnce(NonNull<FixedSizeMessageBody>));
 }

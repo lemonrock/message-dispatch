@@ -3,11 +3,9 @@
 
 
 use super::*;
+use super::message::VariablySizedMessageBody;
 
 
 include!("BoxedFunctionPointer.rs");
-include!("CompressedTypeIdentifier.rs");
+include!("DropVariablySizedMessageBodyInPlaceFunctionPointer.rs");
 include!("MutableTypeErasedBoxedFunction.rs");
-include!("MutableTypeErasedBoxedFunctionCompressedMap.rs");
-include!("Receiver.rs");
-include!("Register.rs");

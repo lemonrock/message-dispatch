@@ -2,36 +2,16 @@
 // Copyright © 2019-2020 The developers of message-dispatch. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/message-dispatch/master/COPYRIGHT.
 
 
-/// A compressed type identifier is more efficient to use than a `TypeId`, but only be used for upto 256 types.
-#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct CompressedTypeIdentifier(u8);
-
-impl From<u8> for CompressedTypeIdentifier
+extern
 {
-	#[inline(always)]
-	fn from(value: u8) -> Self
-	{
-		Self(value)
-	}
+	pub(crate) type VariablySizedMessageBody;
 }
 
-impl Into<u8> for CompressedTypeIdentifier
+impl Debug for VariablySizedMessageBody
 {
 	#[inline(always)]
-	fn into(self) -> u8
+	fn fmt(&self, f: &mut Formatter) -> fmt::Result
 	{
-		self.0
-	}
-}
-
-impl CompressedTypeIdentifier
-{
-	/// Size in bytes.
-	pub const Size: usize = size_of::<Self>();
-
-	#[inline(always)]
-	fn index(self) -> usize
-	{
-		self.0 as usize
+		write!(f, "VariablySizedMessageBody")
 	}
 }
