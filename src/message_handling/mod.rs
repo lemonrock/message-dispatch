@@ -2,16 +2,9 @@
 // Copyright © 2019-2020 The developers of message-dispatch. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/message-dispatch/master/COPYRIGHT.
 
 
-extern
-{
-	type BoxedFunctionPointer;
-}
+use super::*;
+use super::message::VariablySizedMessageBody;
 
-impl Debug for BoxedFunctionPointer
-{
-	#[inline(always)]
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result
-	{
-		write!(f, "BoxedFunctionPointer")
-	}
-}
+
+include!("DropVariablySizedMessageBodyInPlaceFunctionPointer.rs");
+include!("MessageHandler.rs");

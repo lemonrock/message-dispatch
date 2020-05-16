@@ -5,8 +5,8 @@
 use super::*;
 
 
-include!("Message.rs");
 include!("MessageHeader.rs");
+include!("MessageRepresentation.rs");
 include!("VariablySizedMessageBody.rs");
 include!("VariablySizedPadding.rs");
 include!("VariablySizedPaddingThenAVariablySizedMessageBodyThenVariablySizedPadding.rs");

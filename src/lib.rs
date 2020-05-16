@@ -30,10 +30,11 @@ assert_cfg!(target_os = "linux");
 assert_cfg!(target_pointer_width = "64");
 
 
-use self::erased_boxed_functions::*;
 use self::message::*;
+use self::message_handling::*;
 use self::virtual_method_tables::*;
-use arrayvec::{ArrayVec, Array};
+use arrayvec::Array;
+use arrayvec::ArrayVec;
 use linux_support::bit_set::BitSet;
 use linux_support::bit_set::PerBitSetAwareData;
 use linux_support::cpu::HyperThread;
@@ -60,22 +61,19 @@ use std::sync::Arc;
 use terminate::Terminate;
 
 
-/// Erased, boxed functions can be used as generic message dispatchers.
-pub mod erased_boxed_functions;
-
-
-/// Various wrappers around virtual method tables (vtables) which allow for them to be tagged.
-///
-/// A tagged pointer to a vtable allows one to mix multiple `dyn Trait` (fat pointers), using the tag to differentiated the trait type.
-mod virtual_method_tables;
-
-
 mod message;
+
+
+mod message_handling;
+
+
+mod virtual_method_tables;
 
 
 include!("CompressedTypeIdentifier.rs");
 include!("Dequeue.rs");
 include!("Enqueue.rs");
+include!("Message.rs");
 include!("MessageHandlers.rs");
 include!("Queue.rs");
 include!("Queues.rs");

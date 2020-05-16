@@ -5,13 +5,13 @@
 /// Represents a message to be enqueued to a buffer.
 #[derive(Debug)]
 #[repr(C)]
-pub(super) struct Message
+pub(super) struct MessageRepresentation
 {
 	message_header: MessageHeader,
 	padding_then_message_body_then_padding: VariablySizedPaddingThenAVariablySizedMessageBodyThenVariablySizedPadding,
 }
 
-impl Message
+impl MessageRepresentation
 {
 	#[inline(always)]
 	pub(super) fn enqueue<FixedSizeMessageBody: Sized>(magic_ring_buffer: &MagicRingBuffer, fixed_size_message_body_compressed_type_identifier: CompressedTypeIdentifier, fixed_size_message_body_constructor: impl FnOnce(NonNull<FixedSizeMessageBody>))

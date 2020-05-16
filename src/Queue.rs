@@ -28,7 +28,7 @@ impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Drop
 			(
 				|buffer|
 				{
-					Message::process_next_message_in_buffer::<Result<(), DequeuedMessageProcessingError>, _>
+					MessageRepresentation::process_next_message_in_buffer::<Result<(), DequeuedMessageProcessingError>, _>
 					(
 						buffer,
 						|compressed_type_identifier, variably_sized_message_body|
@@ -58,7 +58,7 @@ impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Enqu
 	#[inline(always)]
 	unsafe fn enqueue<FixedSizeMessageBody: Sized>(&self, fixed_sized_message_body_compressed_type_identifier: CompressedTypeIdentifier, fixed_size_message_body_constructor: impl FnOnce(NonNull<FixedSizeMessageBody>))
 	{
-		Message::enqueue(&self.magic_ring_buffer, fixed_sized_message_body_compressed_type_identifier, fixed_size_message_body_constructor)
+		MessageRepresentation::enqueue(&self.magic_ring_buffer, fixed_sized_message_body_compressed_type_identifier, fixed_size_message_body_constructor)
 	}
 }
 
@@ -75,7 +75,7 @@ impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Dequ
 			(
 				|buffer|
 				{
-					Message::process_next_message_in_buffer::<Result<(), DequeuedMessageProcessingError>, _>
+					MessageRepresentation::process_next_message_in_buffer::<Result<(), DequeuedMessageProcessingError>, _>
 					(
 						buffer,
 						|compressed_type_identifier, variably_sized_message_body|

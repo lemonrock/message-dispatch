@@ -21,7 +21,7 @@
 /// A very clever optimization of this structure could produce a jump table at runtime, so reducing indirect calls to direct calls, should this be necessary.
 pub struct MessageHandlers<MessageHandlerArguments, MessageHandlerReturns>
 {
-	compressed_type_identifier_to_function: ArrayVec<[(MutableTypeErasedBoxedFunction<MessageHandlerArguments, MessageHandlerReturns>, DropVariablySizedMessageBodyInPlaceFunctionPointer); CompressedTypeIdentifier::ExclusiveMaximum]>,
+	compressed_type_identifier_to_function: ArrayVec<[(MessageHandler<MessageHandlerArguments, MessageHandlerReturns>, DropVariablySizedMessageBodyInPlaceFunctionPointer); CompressedTypeIdentifier::ExclusiveMaximum]>,
 	type_identifier_to_compressed_type_identifier: HashMap<TypeId, CompressedTypeIdentifier>,
 	largest_possible_message: NonZeroU64,
 }
@@ -35,12 +35,12 @@ impl<MessageHandlerArguments, MessageHandlerReturns> Default for MessageHandlers
 		{
 			compressed_type_identifier_to_function: ArrayVec::default(),
 			type_identifier_to_compressed_type_identifier: HashMap::with_capacity(CompressedTypeIdentifier::ExclusiveMaximum),
-			largest_possible_message: unsafe { NonZeroU64::new_unchecked(Message::smallest_possible_total_message_size_including_message_header() as u64) },
+			largest_possible_message: unsafe { NonZeroU64::new_unchecked(MessageRepresentation::smallest_possible_total_message_size_including_message_header() as u64) },
 		}
 	}
 }
 
-impl<MessageHandlerArguments, MessageHandlerReturns> MessageHandlers<MessageHandlerArguments, MessageHandlerReturns>
+impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> MessageHandlers<MessageHandlerArguments, Result<(), DequeuedMessageProcessingError>>
 {
 	/// Registers a `MessageHandler` and returns a `CompressedTypeIdentifier` to refer to it.
 	///
@@ -54,7 +54,16 @@ impl<MessageHandlerArguments, MessageHandlerReturns> MessageHandlers<MessageHand
 	///
 	/// A `MessageHandler` does not need to call `drop_in_place()` on `Message`; this will be done when the `MessageHandler` returns.
 	#[inline(always)]
-	pub fn register_message_handler<MessageHandler: FnMut(&mut FixedSizedMessageBody, &MessageHandlerArguments) -> MessageHandlerReturns + 'static, FixedSizedMessageBody: 'static + Sized>(&mut self, message_handler: MessageHandler) -> CompressedTypeIdentifier
+	pub fn register_message_handler<M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, DequeuedMessageProcessingError=DequeuedMessageProcessingError>>(&mut self) -> CompressedTypeIdentifier
+	{
+		self.register_message_handler_internal::<M>(M::handle_message)
+	}
+}
+
+impl<MessageHandlerArguments, MessageHandlerReturns> MessageHandlers<MessageHandlerArguments, MessageHandlerReturns>
+{
+	#[inline(always)]
+	fn register_message_handler_internal<FixedSizedMessageBody: 'static + Sized>(&mut self, message_handler: fn(&mut FixedSizedMessageBody, &MessageHandlerArguments) -> MessageHandlerReturns) -> CompressedTypeIdentifier
 	{
 		let next_compressed_type_identifier = CompressedTypeIdentifier::next(&self.compressed_type_identifier_to_function);
 		
@@ -70,10 +79,10 @@ impl<MessageHandlerArguments, MessageHandlerReturns> MessageHandlers<MessageHand
 			unsafe { transmute(virtual_method_table_pointer.drop_in_place_function_pointer()) }
 		};
 		
-		self.compressed_type_identifier_to_function.push((MutableTypeErasedBoxedFunction::new(message_handler), drop_in_place_function_pointer));
+		self.compressed_type_identifier_to_function.push((MessageHandler::new(message_handler), drop_in_place_function_pointer));
 		
 		{
-			let largest_possible_message = unsafe { NonZeroU64::new_unchecked(Message::largest_possible_total_message_size_including_message_header::<FixedSizedMessageBody>() as u64) };
+			let largest_possible_message = unsafe { NonZeroU64::new_unchecked(MessageRepresentation::largest_possible_total_message_size_including_message_header::<FixedSizedMessageBody>() as u64) };
 			if largest_possible_message > self.largest_possible_message
 			{
 				self.largest_possible_message = largest_possible_message
@@ -135,7 +144,7 @@ impl<MessageHandlerArguments, MessageHandlerReturns> MessageHandlers<MessageHand
 	///
 	/// Panics if no function is registered (only if `debug_assertions` are configured).
 	#[inline(always)]
-	fn entry(&self, compressed_type_identifier: CompressedTypeIdentifier) -> &(MutableTypeErasedBoxedFunction<MessageHandlerArguments, MessageHandlerReturns>, DropVariablySizedMessageBodyInPlaceFunctionPointer)
+	fn entry(&self, compressed_type_identifier: CompressedTypeIdentifier) -> &(MessageHandler<MessageHandlerArguments, MessageHandlerReturns>, DropVariablySizedMessageBodyInPlaceFunctionPointer)
 	{
 		let index = compressed_type_identifier.index();
 

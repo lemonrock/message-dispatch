@@ -45,18 +45,22 @@ impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Queu
 	///
 	/// If there is no queue for the hyper thread, publishes to itself.
 	/// This supports a scenario under Linux using the `SO_INCOMING_CPU` socket option, which can map to a CPU not assigned to the process.
-	pub fn publish_safe_but_slow<FixedSizeMessageBody: 'static + Sized, FixedSizeMessageBodyConstructor: FnOnce(NonNull<FixedSizeMessageBody>)>(&self, hyper_thread: HyperThread, fixed_size_message_body_constructor: FixedSizeMessageBodyConstructor)
+	pub fn publish_safe_but_slow<M: 'static + Message>(&self, hyper_thread: HyperThread)
 	{
-		self.0.get_or_current(hyper_thread).enqueue_slow_but_safe(fixed_size_message_body_constructor)
+		let queue = self.0.get_or_current(hyper_thread);
+		let fixed_sized_message_body_compressed_type_identifier = queue.fixed_sized_message_body_compressed_type_identifier::<M>();
+		unsafe { queue.enqueue(fixed_sized_message_body_compressed_type_identifier, M::construct_message) }
 	}
 	
 	/// A publisher publishes to a specific hyper thread.
 	///
 	/// If there is no queue for the hyper thread, publishes to itself.
 	/// This supports a scenario under Linux using the `SO_INCOMING_CPU` socket option, which can map to a CPU not assigned to the process.
-	pub unsafe fn publish<FixedSizeMessageBody: 'static + Sized, FixedSizeMessageBodyConstructor: FnOnce(NonNull<FixedSizeMessageBody>)>(&self, hyper_thread: HyperThread, fixed_sized_message_body_compressed_type_identifier: CompressedTypeIdentifier, fixed_size_message_body_constructor: FixedSizeMessageBodyConstructor)
+	///
+	/// The map of `M` to `fixed_sized_message_body_compressed_type_identifier` can be cached per hyper thread to publish to.
+	pub unsafe fn publish<M: 'static + Message>(&self, hyper_thread: HyperThread, fixed_sized_message_body_compressed_type_identifier: CompressedTypeIdentifier)
 	{
-		self.0.get_or_current(hyper_thread).enqueue(fixed_sized_message_body_compressed_type_identifier, fixed_size_message_body_constructor)
+		self.0.get_or_current(hyper_thread).enqueue(fixed_sized_message_body_compressed_type_identifier, M::construct_message)
 	}
 	
 	/// Only works for the current hyper thread.
