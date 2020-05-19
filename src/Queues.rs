@@ -64,12 +64,10 @@ impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Queu
 	}
 	
 	/// Only works for the current hyper thread.
-	///
-	/// Do not call this repeatedly but cache the result for a small performance gain.
 	#[inline(always)]
-	pub fn subscribe<'a>(&'a self) -> Subscriber<'a, MessageHandlerArguments, DequeuedMessageProcessingError>
+	pub fn subscriber(&self, current_hyper_thread: HyperThread) -> Subscriber<MessageHandlerArguments, DequeuedMessageProcessingError>
 	{
-		let current = HyperThread::current().1;
-		Subscriber(self.0.get(current).expect("No queue for current hyper thread"))
+		debug_assert_eq!(HyperThread::current().1, current_hyper_thread);
+		Subscriber(unsafe { self.0.get_unchecked(current_hyper_thread) })
 	}
 }
