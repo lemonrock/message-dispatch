@@ -7,16 +7,19 @@
 /// Messages are safely dropped if they are on a queue when the queue is dropped.
 pub trait Message: Sized
 {
+	/// Construct message arguments.
+	type ConstructMessageArguments;
+	
+	/// Construct a message in place using `` on a queue (used by a publishing thread).
+	///
+	/// This may be called on a different thread to `handle_message()`.
+	unsafe fn construct_message(uninitialized_memory: NonNull<Self>, construct_message_arguments: Self::ConstructMessageArguments);
+	
 	/// Message handler arguments.
 	type MessageHandlerArguments;
 	
 	/// Error that can happen when processing a dequeued message.
 	type DequeuedMessageProcessingError: error::Error;
-	
-	/// Construct a message in place using `` on a queue (used by a publishing thread).
-	///
-	/// This may be called on a different thread to `handle_message()`.
-	fn construct_message(uninitialized_memory: NonNull<Self>);
 	
 	/// Handle a message (used by a receiving thread).
 	///

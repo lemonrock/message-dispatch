@@ -9,7 +9,7 @@ pub struct CompressedTypeIdentifier(u8);
 
 impl CompressedTypeIdentifier
 {
-	const ExclusiveMaximum: usize = u8::MAX as usize;
+	const ExclusiveMaximum: usize = (u8::MAX as usize) + 1;
 
 	#[inline(always)]
 	fn index(self) -> usize

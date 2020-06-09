@@ -45,11 +45,11 @@ impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Queu
 	///
 	/// If there is no queue for the hyper thread, publishes to itself.
 	/// This supports a scenario under Linux using the `SO_INCOMING_CPU` socket option, which can map to a CPU not assigned to the process.
-	pub fn publish_safe_but_slow<M: 'static + Message>(&self, hyper_thread: HyperThread)
+	pub fn publish_safe_but_slow<M: 'static + Message>(&self, hyper_thread: HyperThread, construct_message_arguments: M::ConstructMessageArguments)
 	{
 		let queue = self.0.get_or_current(hyper_thread);
 		let fixed_sized_message_body_compressed_type_identifier = queue.fixed_sized_message_body_compressed_type_identifier::<M>();
-		unsafe { queue.enqueue(fixed_sized_message_body_compressed_type_identifier, M::construct_message) }
+		unsafe { queue.enqueue(fixed_sized_message_body_compressed_type_identifier, |uninitialized_memory| M::construct_message(uninitialized_memory, construct_message_arguments)) }
 	}
 	
 	/// A publisher publishes to a specific hyper thread.
@@ -58,9 +58,9 @@ impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Queu
 	/// This supports a scenario under Linux using the `SO_INCOMING_CPU` socket option, which can map to a CPU not assigned to the process.
 	///
 	/// The map of `M` to `fixed_sized_message_body_compressed_type_identifier` can be cached per hyper thread to publish to.
-	pub unsafe fn publish<M: 'static + Message>(&self, hyper_thread: HyperThread, fixed_sized_message_body_compressed_type_identifier: CompressedTypeIdentifier)
+	pub unsafe fn publish<M: 'static + Message>(&self, hyper_thread: HyperThread, fixed_sized_message_body_compressed_type_identifier: CompressedTypeIdentifier, construct_message_arguments: M::ConstructMessageArguments)
 	{
-		self.0.get_or_current(hyper_thread).enqueue(fixed_sized_message_body_compressed_type_identifier, M::construct_message)
+		self.0.get_or_current(hyper_thread).enqueue(fixed_sized_message_body_compressed_type_identifier, |uninitialized_memory| M::construct_message(uninitialized_memory, construct_message_arguments))
 	}
 	
 	/// Only works for the current hyper thread.
