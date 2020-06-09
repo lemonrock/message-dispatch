@@ -26,4 +26,5 @@ arrayvec = { version = "^0.5.1", features = ["array-sizes-33-128", "array-sizes-
 libc = { version = "^0.2.69", features = ["const-extern-fn", "extra_traits", "std"] }
 linux-support = { path = "../linux-support", version = "0.0.2" }
 magic-ring-buffer = { path = "../magic-ring-buffer", version = "0.2.0" }
+swiss-army-knife = { version = "0.0.0", path = "../swiss-army-knife" }
 terminate = { version = "^0.2.0", path = "../terminate" }

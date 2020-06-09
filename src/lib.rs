@@ -35,9 +35,8 @@ use self::message_handling::*;
 use self::virtual_method_tables::*;
 use arrayvec::Array;
 use arrayvec::ArrayVec;
-use linux_support::bit_set::BitSet;
-use linux_support::bit_set::PerBitSetAwareData;
 use linux_support::cpu::HyperThread;
+use linux_support::cpu::HyperThreadPerBitSetAwareData;
 use linux_support::memory::huge_pages::DefaultPageSizeAndHugePageSizes;
 use magic_ring_buffer::*;
 use std::collections::HashMap;
@@ -58,6 +57,8 @@ use std::ptr::null_mut;
 use std::ptr::write;
 use std::raw::TraitObject;
 use std::sync::Arc;
+use swiss_army_knife::bit_set::BitSet;
+use swiss_army_knife::bit_set::PerBitSetAwareData;
 use terminate::Terminate;
 
 
