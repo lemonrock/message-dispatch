@@ -15,7 +15,7 @@ impl<'a, M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, D
 	#[inline(always)]
 	fn new(queue_data: &'a PerBitSetAwareData<HyperThread, Queue<MessageHandlerArguments, DequeuedMessageProcessingError>>, hyper_threads_to_publish_to: Box<[HyperThread]>) -> Self
 	{
-		debug_assert_ne!(hyper_threads_to_publish_to.len, 0);
+		debug_assert_ne!(hyper_threads_to_publish_to.len(), 0);
 		let default_hyper_thread = unsafe { * hyper_threads_to_publish_to.get_unchecked(0) };
 		
 		Self
