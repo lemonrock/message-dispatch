@@ -3,7 +3,6 @@
 
 
 /// Pass cloned copies of this to each thread at initialization.
-#[derive(Clone)]
 pub struct Queues<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error>(Arc<PerBitSetAwareData<HyperThread, Queue<MessageHandlerArguments, DequeuedMessageProcessingError>>>);
 
 unsafe impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Send for Queues<MessageHandlerArguments, DequeuedMessageProcessingError>
@@ -12,6 +11,15 @@ unsafe impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Erro
 
 unsafe impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Sync for Queues<MessageHandlerArguments, DequeuedMessageProcessingError>
 {
+}
+
+impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Clone for Queues<MessageHandlerArguments, DequeuedMessageProcessingError>
+{
+	#[inline(always)]
+	fn clone(&self) -> Self
+	{
+		Self(self.0.clone())
+	}
 }
 
 impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Queues<MessageHandlerArguments, DequeuedMessageProcessingError>
@@ -45,7 +53,7 @@ impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Queu
 	#[inline(always)]
 	pub fn publisher<M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, DequeuedMessageProcessingError=DequeuedMessageProcessingError>>(&self, default_hyper_thread: HyperThread) -> Publisher<M, MessageHandlerArguments, DequeuedMessageProcessingError>
 	{
-		Publisher::new(&self.0, default_hyper_thread)
+		Publisher::new(self, default_hyper_thread)
 	}
 	
 	/// New round-robin publisher.
@@ -54,7 +62,7 @@ impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Queu
 	#[inline(always)]
 	pub fn round_robin_publisher<M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, DequeuedMessageProcessingError=DequeuedMessageProcessingError>>(&self, hyper_threads_to_publish_to: Box<[HyperThread]>) -> RoundRobinPublisher<M, MessageHandlerArguments, DequeuedMessageProcessingError>
 	{
-		RoundRobinPublisher::new(&self.0, hyper_threads_to_publish_to)
+		RoundRobinPublisher::new(self, hyper_threads_to_publish_to)
 	}
 	
 	/// A publisher publishes to a specific hyper thread.
@@ -77,9 +85,8 @@ impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Queu
 	
 	/// Only works for the current hyper thread.
 	#[inline(always)]
-	pub fn subscriber(&self, current_hyper_thread: HyperThread) -> Subscriber<MessageHandlerArguments, DequeuedMessageProcessingError>
+	pub fn subscriber(&self, for_hyper_thread: HyperThread) -> Subscriber<MessageHandlerArguments, DequeuedMessageProcessingError>
 	{
-		debug_assert_eq!(HyperThread::current().1, current_hyper_thread);
-		Subscriber(unsafe { self.0.get_unchecked(current_hyper_thread) })
+		Subscriber::new(self, for_hyper_thread)
 	}
 }

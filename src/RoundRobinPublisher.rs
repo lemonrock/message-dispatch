@@ -3,24 +3,24 @@
 
 
 /// A round-robin publisher.
-pub struct RoundRobinPublisher<'a, M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, DequeuedMessageProcessingError=DequeuedMessageProcessingError>, MessageHandlerArguments, DequeuedMessageProcessingError: error::Error>
+pub struct RoundRobinPublisher<M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, DequeuedMessageProcessingError=DequeuedMessageProcessingError>, MessageHandlerArguments, DequeuedMessageProcessingError: error::Error>
 {
-	publisher: Publisher<'a, M, MessageHandlerArguments, DequeuedMessageProcessingError>,
+	publisher: Publisher<M, MessageHandlerArguments, DequeuedMessageProcessingError>,
 	hyper_threads_to_publish_to: Box<[HyperThread]>,
 	next_hyper_thread_to_publish_to_index: Cell<usize>,
 }
 
-impl<'a, M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, DequeuedMessageProcessingError=DequeuedMessageProcessingError>, MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> RoundRobinPublisher<'a, M, MessageHandlerArguments, DequeuedMessageProcessingError>
+impl<M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, DequeuedMessageProcessingError=DequeuedMessageProcessingError>, MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> RoundRobinPublisher<M, MessageHandlerArguments, DequeuedMessageProcessingError>
 {
 	#[inline(always)]
-	fn new(queue_data: &'a PerBitSetAwareData<HyperThread, Queue<MessageHandlerArguments, DequeuedMessageProcessingError>>, hyper_threads_to_publish_to: Box<[HyperThread]>) -> Self
+	fn new(queues: &Queues<MessageHandlerArguments, DequeuedMessageProcessingError>, hyper_threads_to_publish_to: Box<[HyperThread]>) -> Self
 	{
 		debug_assert_ne!(hyper_threads_to_publish_to.len(), 0);
 		let default_hyper_thread = unsafe { * hyper_threads_to_publish_to.get_unchecked(0) };
 		
 		Self
 		{
-			publisher: Publisher::new(queue_data, default_hyper_thread),
+			publisher: Publisher::new(queues, default_hyper_thread),
 			hyper_threads_to_publish_to,
 			next_hyper_thread_to_publish_to_index: Cell::new(0),
 		}

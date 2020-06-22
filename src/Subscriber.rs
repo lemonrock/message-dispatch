@@ -10,14 +10,41 @@
 ///
 /// `MessageHandlerArguments` must be common to all possible message types (all possible `FixedSizeMessageBody` and `CompressedTypeIdentifier`s).
 /// `DequeuedMessageProcessingError` must be common to all possible message types (all possible `FixedSizeMessageBody` and `CompressedTypeIdentifier`s).
-pub struct Subscriber<'a, MessageHandlerArguments, DequeuedMessageProcessingError: error::Error>(&'a Queue<MessageHandlerArguments, DequeuedMessageProcessingError>);
-
-impl<'a, MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Subscriber<'a, MessageHandlerArguments, DequeuedMessageProcessingError>
+///
+///
+/// `queue` holds a reference to `_queues_drop_reference`, making this a self-referential struct.
+/// As `_queues_drop_reference` is internally an `Arc`, this is ok as the reference is to a stable location in memory, ie one that doesn't move.
+/// This can not be expressed using lifetimes, hence the `*const Queue` below (otherwise the lifetime would be `'self', if such a thing existed).
+pub struct Subscriber<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error>
 {
+	_queues_drop_reference: Queues<MessageHandlerArguments, DequeuedMessageProcessingError>,
+	queue: *const Queue<MessageHandlerArguments, DequeuedMessageProcessingError>,
+	#[cfg(debug_assertions)] for_hyper_thread: HyperThread,
+}
+
+impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Subscriber<MessageHandlerArguments, DequeuedMessageProcessingError>
+{
+	#[inline(always)]
+	fn new(queues: &Queues<MessageHandlerArguments, DequeuedMessageProcessingError>, for_hyper_thread: HyperThread) -> Self
+	{
+		Self
+		{
+			_queues_drop_reference: queues.clone(),
+			queue: unsafe { queues.0.get_unchecked(for_hyper_thread) },
+			#[cfg(debug_assertions)] for_hyper_thread,
+		}
+	}
+	
 	/// Receives and handles messages; short-circuits if `self.terminate` becomes true or a message handler returns an error `DequeuedMessageProcessingError`.
 	#[inline(always)]
 	pub fn receive_and_handle_messages(&self, terminate: &Arc<impl Terminate>, message_handler_arguments: &MessageHandlerArguments) -> Result<(), DequeuedMessageProcessingError>
 	{
-		self.0.dequeue(terminate, message_handler_arguments)
+		#[cfg(debug_assertions)]
+		{
+			debug_assert_eq!(self.for_hyper_thread, HyperThread::current().1, "Must only be accessed by one specific HyperThread")
+		}
+		
+		let queue = unsafe { &*self.queue };
+		queue.dequeue(terminate, message_handler_arguments)
 	}
 }

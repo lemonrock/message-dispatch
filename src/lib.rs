@@ -37,10 +37,12 @@ use arrayvec::Array;
 use arrayvec::ArrayVec;
 use linux_support::cpu::HyperThread;
 use linux_support::memory::huge_pages::DefaultPageSizeAndHugePageSizes;
-use magic_ring_buffer::*;
+use magic_ring_buffer::MagicRingBuffer;
+use magic_ring_buffer::MirroredMemoryMapCreationError;
 use std::collections::HashMap;
 use std::any::Any;
 use std::any::TypeId;
+use std::cell::Cell;
 use std::error;
 use std::fmt;
 use std::fmt::Debug;
@@ -60,7 +62,6 @@ use std::sync::Arc;
 use swiss_army_knife::bit_set::BitSet;
 use swiss_army_knife::bit_set::PerBitSetAwareData;
 use terminate::Terminate;
-use std::cell::Cell;
 
 
 mod message;

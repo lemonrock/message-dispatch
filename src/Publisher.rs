@@ -3,21 +3,27 @@
 
 
 /// A publisher for one type of message, `M`.
-pub struct Publisher<'a, M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, DequeuedMessageProcessingError=DequeuedMessageProcessingError>, MessageHandlerArguments, DequeuedMessageProcessingError: error::Error>
+///
+/// `queues_mapped` holds a reference to `_queues_drop_reference`, making this a self-referential struct.
+/// As `_queues_drop_reference` is internally an `Arc`, this is ok as the reference is to a stable location in memory, ie one that doesn't move.
+/// This can not be expressed using lifetimes, hence the `*const Queue` below (otherwise the lifetime would be `'self', if such a thing existed).
+pub struct Publisher<M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, DequeuedMessageProcessingError=DequeuedMessageProcessingError>, MessageHandlerArguments, DequeuedMessageProcessingError: error::Error>
 {
-	map: PerBitSetAwareData<HyperThread, (&'a Queue<MessageHandlerArguments, DequeuedMessageProcessingError>, CompressedTypeIdentifier)>,
+	_queues_drop_reference: Queues<MessageHandlerArguments, DequeuedMessageProcessingError>,
+	queues_mapped: PerBitSetAwareData<HyperThread, (*const Queue<MessageHandlerArguments, DequeuedMessageProcessingError>, CompressedTypeIdentifier)>,
 	default_hyper_thread: HyperThread,
 	marker: PhantomData<M>,
 }
 
-impl<'a, M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, DequeuedMessageProcessingError=DequeuedMessageProcessingError>, MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Publisher<'a, M, MessageHandlerArguments, DequeuedMessageProcessingError>
+impl<M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, DequeuedMessageProcessingError=DequeuedMessageProcessingError>, MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Publisher<M, MessageHandlerArguments, DequeuedMessageProcessingError>
 {
 	#[inline(always)]
-	fn new(queue_data: &'a PerBitSetAwareData<HyperThread, Queue<MessageHandlerArguments, DequeuedMessageProcessingError>>, default_hyper_thread: HyperThread) -> Self
+	fn new(queues: &Queues<MessageHandlerArguments, DequeuedMessageProcessingError>, default_hyper_thread: HyperThread) -> Self
 	{
 		Self
 		{
-			map: queue_data.map_ref(|_hyper_thread, queue| (queue, queue.fixed_sized_message_body_compressed_type_identifier::<M>())),
+			_queues_drop_reference: queues.clone(),
+			queues_mapped: queues.0.map_ref(|_hyper_thread, queue| (queue as *const _, queue.fixed_sized_message_body_compressed_type_identifier::<M>())),
 			default_hyper_thread,
 			marker: PhantomData,
 		}
@@ -32,9 +38,9 @@ impl<'a, M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, D
 	#[inline(always)]
 	pub fn publish(&self, hyper_thread: HyperThread, construct_message_arguments: M::ConstructMessageArguments)-> HyperThread
 	{
-		let (&(queue, fixed_sized_message_body_compressed_type_identifier), actual_hyper_thread) = self.map.get_or(hyper_thread, self.default_hyper_thread);
+		let (&(queue, fixed_sized_message_body_compressed_type_identifier), actual_hyper_thread) = self.queues_mapped.get_or(hyper_thread, self.default_hyper_thread);
 		
-		unsafe { queue.enqueue(fixed_sized_message_body_compressed_type_identifier, |uninitialized_memory| M::construct_message(uninitialized_memory, construct_message_arguments)) };
+		unsafe { (& * queue).enqueue(fixed_sized_message_body_compressed_type_identifier, |uninitialized_memory| M::construct_message(uninitialized_memory, construct_message_arguments)) };
 		actual_hyper_thread
 	}
 }
