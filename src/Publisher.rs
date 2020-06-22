@@ -7,6 +7,7 @@
 /// `queues_mapped` holds a reference to `_queues_drop_reference`, making this a self-referential struct.
 /// As `_queues_drop_reference` is internally an `Arc`, this is ok as the reference is to a stable location in memory, ie one that doesn't move.
 /// This can not be expressed using lifetimes, hence the `*const Queue` below (otherwise the lifetime would be `'self', if such a thing existed).
+#[derive(Debug)]
 pub struct Publisher<M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, DequeuedMessageProcessingError=DequeuedMessageProcessingError>, MessageHandlerArguments, DequeuedMessageProcessingError: error::Error>
 {
 	_queues_drop_reference: Queues<MessageHandlerArguments, DequeuedMessageProcessingError>,

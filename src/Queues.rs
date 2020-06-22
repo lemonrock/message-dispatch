@@ -3,6 +3,7 @@
 
 
 /// Pass cloned copies of this to each thread at initialization.
+#[derive(Debug)]
 pub struct Queues<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error>(Arc<PerBitSetAwareData<HyperThread, Queue<MessageHandlerArguments, DequeuedMessageProcessingError>>>);
 
 unsafe impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Send for Queues<MessageHandlerArguments, DequeuedMessageProcessingError>

@@ -19,6 +19,7 @@
 /// `MessageHandler` and `FixedSizedMessageBody` are of a different type for each registered function closure.
 ///
 /// A very clever optimization of this structure could produce a jump table at runtime, so reducing indirect calls to direct calls, should this be necessary.
+#[derive(Debug)]
 pub struct MessageHandlers<MessageHandlerArguments, MessageHandlerReturns>
 {
 	compressed_type_identifier_to_function: ArrayVec<[(MessageHandler<MessageHandlerArguments, MessageHandlerReturns>, DropVariablySizedMessageBodyInPlaceFunctionPointer); CompressedTypeIdentifier::ExclusiveMaximum]>,

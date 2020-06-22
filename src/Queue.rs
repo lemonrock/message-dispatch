@@ -10,6 +10,7 @@
 /// `DequeuedMessageProcessingError` must be common to all possible message types (all possible `FixedSizeMessageBody` and `CompressedTypeIdentifier`s).
 ///
 /// Both a sending thread and the receiving thread have to agree on `message_handlers` so that `drop()` can work.
+#[derive(Debug)]
 struct Queue<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error>
 {
 	magic_ring_buffer: MagicRingBuffer,

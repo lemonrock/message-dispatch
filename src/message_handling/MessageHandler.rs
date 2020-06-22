@@ -7,6 +7,15 @@ pub(crate) struct MessageHandler<MessageHandlerArguments, MessageHandlerReturns>
 	message_handler: fn(NonNull<VariablySizedMessageBody>, &MessageHandlerArguments) -> MessageHandlerReturns,
 }
 
+impl<MessageHandlerArguments, MessageHandlerReturns> Debug for MessageHandler<MessageHandlerArguments, MessageHandlerReturns>
+{
+	#[inline(always)]
+	fn fmt(&self, f: &mut Formatter) -> fmt::Result
+	{
+		write!(f, "MessageHandler({:?})", self.message_handler as usize)
+	}
+}
+
 impl<MessageHandlerArguments, MessageHandlerReturns> MessageHandler<MessageHandlerArguments, MessageHandlerReturns>
 {
 	/// Creates a new instance, wrapping `function`.

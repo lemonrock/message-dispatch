@@ -3,6 +3,7 @@
 
 
 /// A round-robin publisher.
+#[derive(Debug)]
 pub struct RoundRobinPublisher<M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, DequeuedMessageProcessingError=DequeuedMessageProcessingError>, MessageHandlerArguments, DequeuedMessageProcessingError: error::Error>
 {
 	publisher: Publisher<M, MessageHandlerArguments, DequeuedMessageProcessingError>,
