@@ -39,7 +39,6 @@ use linux_support::cpu::HyperThread;
 use linux_support::memory::huge_pages::DefaultPageSizeAndHugePageSizes;
 use magic_ring_buffer::MagicRingBuffer;
 use magic_ring_buffer::MirroredMemoryMapCreationError;
-use std::collections::HashMap;
 use std::any::Any;
 use std::any::TypeId;
 use std::cell::Cell;
@@ -61,6 +60,7 @@ use std::raw::TraitObject;
 use std::sync::Arc;
 use swiss_army_knife::bit_set::BitSet;
 use swiss_army_knife::bit_set::PerBitSetAwareData;
+use swiss_army_knife::hash_map_and_hash_set::FastSecureHashMap as HashMap;
 use terminate::Terminate;
 
 
