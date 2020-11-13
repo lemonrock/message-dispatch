@@ -31,7 +31,7 @@ impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Subs
 		Self
 		{
 			_queues_drop_reference: queues.clone(),
-			queue: unsafe { queues.0.get_unchecked(for_hyper_thread) },
+			queue: queues.0.get_unchecked_safe(for_hyper_thread),
 			#[cfg(debug_assertions)] for_hyper_thread,
 		}
 	}

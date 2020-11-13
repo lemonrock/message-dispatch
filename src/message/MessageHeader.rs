@@ -16,7 +16,7 @@ impl MessageHeader
 	#[inline(always)]
 	fn variably_sized_message_body(&mut self) -> NonNull<VariablySizedMessageBody>
 	{
-		unsafe { NonNull::new_unchecked(self.message_body_pointer() as *mut VariablySizedMessageBody) }
+		new_non_null(self.message_body_pointer() as *mut VariablySizedMessageBody)
 	}
 
 	#[inline(always)]

@@ -111,7 +111,7 @@ impl MessageRepresentation
 			write(&mut message_header.total_message_size_including_message_header_padding_to_align_before_message_body_and_padding_to_align_after, total_message_size_including_message_header_padding_to_align_before_message_body_and_padding_to_align_after as u16); // TODO: Could be stored less message header size and leading padding, thus allowing a little more data.
 		}
 
-		fixed_size_message_body_constructor(unsafe { NonNull::new_unchecked(message_body_pointer as *mut FixedSizeMessageBody) })
+		fixed_size_message_body_constructor(new_non_null(message_body_pointer as *mut FixedSizeMessageBody))
 	}
 
 	/// Returns `(next_message_pointer, R)`.

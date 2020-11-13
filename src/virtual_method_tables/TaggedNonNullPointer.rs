@@ -85,7 +85,7 @@ impl TaggedNonNullPointer
 		}
 		else
 		{
-			Some(unsafe { NonNull::new_unchecked(raw_pointer as *mut T) })
+			Some(new_non_null(raw_pointer as *mut T))
 		}
 	}
 }

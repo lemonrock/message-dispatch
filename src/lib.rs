@@ -51,7 +51,6 @@ use std::mem::align_of;
 use std::mem::forget;
 use std::mem::size_of;
 use std::mem::transmute;
-#[allow(deprecated)] use std::mem::uninitialized;
 use std::num::NonZeroU64;
 use std::ptr::NonNull;
 use std::ptr::null_mut;
@@ -60,7 +59,11 @@ use std::raw::TraitObject;
 use std::sync::Arc;
 use swiss_army_knife::bit_set::BitSet;
 use swiss_army_knife::bit_set::PerBitSetAwareData;
+use swiss_army_knife::get_unchecked::GetUnchecked;
 use swiss_army_knife::hash_map_and_hash_set::FastSecureHashMap as HashMap;
+use swiss_army_knife::non_zero::new_non_null;
+use swiss_army_knife::non_zero::new_non_zero_u64;
+use swiss_army_knife::unsafe_initialization::unsafe_uninitialized;
 use terminate::Terminate;
 
 

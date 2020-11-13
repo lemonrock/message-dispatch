@@ -17,7 +17,7 @@ impl<M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, Deque
 	fn new(queues: &Queues<MessageHandlerArguments, DequeuedMessageProcessingError>, hyper_threads_to_publish_to: Box<[HyperThread]>) -> Self
 	{
 		debug_assert_ne!(hyper_threads_to_publish_to.len(), 0);
-		let default_hyper_thread = unsafe { * hyper_threads_to_publish_to.get_unchecked(0) };
+		let default_hyper_thread = hyper_threads_to_publish_to.get_unchecked_value_safe(0);
 		
 		Self
 		{
@@ -34,7 +34,7 @@ impl<M: 'static + Message<MessageHandlerArguments=MessageHandlerArguments, Deque
 	pub fn publish(&self, construct_message_arguments: M::ConstructMessageArguments)-> HyperThread
 	{
 		let next_hyper_thread_to_publish_to_index = self.next_hyper_thread_to_publish_to_index.get();
-		let next_hyper_thread = unsafe { * self.hyper_threads_to_publish_to.get_unchecked(next_hyper_thread_to_publish_to_index) };
+		let next_hyper_thread = self.hyper_threads_to_publish_to.get_unchecked_value_safe(next_hyper_thread_to_publish_to_index);
 		if next_hyper_thread_to_publish_to_index == self.hyper_threads_to_publish_to.len()
 		{
 			self.next_hyper_thread_to_publish_to_index.set(0)

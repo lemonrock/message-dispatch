@@ -19,17 +19,16 @@ impl VirtualMethodTablePointer
 {
 	/// Obtains a virtual method table (vtable) from anything.
 	#[inline(always)]
-	#[allow(deprecated)]
 	pub fn from_any<T: 'static>() -> Self
 	{
-		let mut fake: T = unsafe { uninitialized() };
+		let mut fake: T = unsafe_uninitialized();
 
 		let this =
 		{
 			let fat_pointer: &mut dyn Any = &mut fake;
 
 			let trait_object: TraitObject = unsafe { transmute(fat_pointer) };
-			Self(unsafe { NonNull::new_unchecked(trait_object.vtable) })
+			Self(new_non_null(trait_object.vtable))
 		};
 
 		forget(fake);

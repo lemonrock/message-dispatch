@@ -36,7 +36,7 @@ impl<MessageHandlerArguments, MessageHandlerReturns> Default for MessageHandlers
 		{
 			compressed_type_identifier_to_function: ArrayVec::default(),
 			type_identifier_to_compressed_type_identifier: HashMap::with_capacity(CompressedTypeIdentifier::ExclusiveMaximum),
-			largest_possible_message: unsafe { NonZeroU64::new_unchecked(MessageRepresentation::smallest_possible_total_message_size_including_message_header() as u64) },
+			largest_possible_message: new_non_zero_u64(MessageRepresentation::smallest_possible_total_message_size_including_message_header() as u64),
 		}
 	}
 }
@@ -83,7 +83,7 @@ impl<MessageHandlerArguments, MessageHandlerReturns> MessageHandlers<MessageHand
 		self.compressed_type_identifier_to_function.push((MessageHandler::new(message_handler), drop_in_place_function_pointer));
 		
 		{
-			let largest_possible_message = unsafe { NonZeroU64::new_unchecked(MessageRepresentation::largest_possible_total_message_size_including_message_header::<FixedSizedMessageBody>() as u64) };
+			let largest_possible_message = new_non_zero_u64(MessageRepresentation::largest_possible_total_message_size_including_message_header::<FixedSizedMessageBody>() as u64);
 			if largest_possible_message > self.largest_possible_message
 			{
 				self.largest_possible_message = largest_possible_message
@@ -106,7 +106,7 @@ impl<MessageHandlerArguments, MessageHandlerReturns> MessageHandlers<MessageHand
 	#[inline(always)]
 	pub(crate) fn queue_size_in_bytes(&self, preferred_maximum_number_of_elements_of_largest_possible_fixed_size_message_body: NonZeroU64) -> NonZeroU64
 	{
-		unsafe { NonZeroU64::new_unchecked(self.largest_possible_message.get() * preferred_maximum_number_of_elements_of_largest_possible_fixed_size_message_body.get()) }
+		new_non_zero_u64(self.largest_possible_message.get() * preferred_maximum_number_of_elements_of_largest_possible_fixed_size_message_body.get())
 	}
 	
 	/// Calls the function registered for this compressed type identifier.
@@ -155,7 +155,7 @@ impl<MessageHandlerArguments, MessageHandlerReturns> MessageHandlers<MessageHand
 		}
 		else
 		{
-			unsafe { self.compressed_type_identifier_to_function.get_unchecked(index) }
+			self.compressed_type_identifier_to_function.get_unchecked_safe(index)
 		}
 	}
 	
