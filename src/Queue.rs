@@ -100,7 +100,7 @@ impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Queu
 {
 	/// Allocates a new `Queue`.
 	#[inline(always)]
-	pub(crate) fn new(message_handlers: MessageHandlers<MessageHandlerArguments, Result<(), DequeuedMessageProcessingError>>, defaults: &DefaultPageSizeAndHugePageSizes, queue_size_in_bytes: NonZeroU64, inclusive_maximum_bytes_wasted: u64) -> Result<Self, MirroredMemoryMapCreationError>
+	pub(crate) fn new(message_handlers: MessageHandlers<MessageHandlerArguments, Result<(), DequeuedMessageProcessingError>>, defaults: &DefaultHugePageSizes, queue_size_in_bytes: NonZeroU64, inclusive_maximum_bytes_wasted: u64) -> Result<Self, MirroredMemoryMapCreationError>
 	{
 		Ok
 		(

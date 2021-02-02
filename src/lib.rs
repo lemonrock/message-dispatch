@@ -36,7 +36,7 @@ use self::virtual_method_tables::*;
 use arrayvec::Array;
 use arrayvec::ArrayVec;
 use linux_support::cpu::HyperThread;
-use linux_support::memory::huge_pages::DefaultPageSizeAndHugePageSizes;
+use linux_support::memory::huge_pages::DefaultHugePageSizes;
 use magic_ring_buffer::MagicRingBuffer;
 use magic_ring_buffer::MirroredMemoryMapCreationError;
 use std::any::Any;

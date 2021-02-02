@@ -30,7 +30,7 @@ impl<MessageHandlerArguments, DequeuedMessageProcessingError: error::Error> Queu
 	/// This means that they should be allocated from global memory and will *not* be NUMA aware (or will steal from the calling thread's NUMA memory).
 	#[inline(always)]
 	pub fn one_queue_for_each_hyper_thread(hyper_threads: &BitSet<HyperThread>, message_handlers_and_preferred_maximum_number_of_elements_of_largest_possible_fixed_size_message_body_in_queue_for_hyper_thread
-	: &impl Fn(HyperThread) -> (MessageHandlers<MessageHandlerArguments, Result<(), DequeuedMessageProcessingError>>, NonZeroU64), defaults: &DefaultPageSizeAndHugePageSizes, inclusive_maximum_bytes_wasted: u64) -> Self
+	: &impl Fn(HyperThread) -> (MessageHandlers<MessageHandlerArguments, Result<(), DequeuedMessageProcessingError>>, NonZeroU64), defaults: &DefaultHugePageSizes, inclusive_maximum_bytes_wasted: u64) -> Self
 	{
 		Self
 		(
