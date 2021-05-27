@@ -33,7 +33,6 @@ assert_cfg!(target_pointer_width = "64");
 use self::message::*;
 use self::message_handling::*;
 use self::virtual_method_tables::*;
-use arrayvec::Array;
 use arrayvec::ArrayVec;
 use linux_support::cpu::HyperThread;
 use linux_support::memory::huge_pages::DefaultHugePageSizes;

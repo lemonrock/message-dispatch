@@ -22,7 +22,7 @@
 #[derive(Debug)]
 pub struct MessageHandlers<MessageHandlerArguments, MessageHandlerReturns>
 {
-	compressed_type_identifier_to_function: ArrayVec<[(MessageHandler<MessageHandlerArguments, MessageHandlerReturns>, DropVariablySizedMessageBodyInPlaceFunctionPointer); CompressedTypeIdentifier::ExclusiveMaximum]>,
+	compressed_type_identifier_to_function: ArrayVec<(MessageHandler<MessageHandlerArguments, MessageHandlerReturns>, DropVariablySizedMessageBodyInPlaceFunctionPointer), CompressedTypeIdentifier::ExclusiveMaximum>,
 	type_identifier_to_compressed_type_identifier: HashMap<TypeId, CompressedTypeIdentifier>,
 	largest_possible_message: NonZeroU64,
 }
